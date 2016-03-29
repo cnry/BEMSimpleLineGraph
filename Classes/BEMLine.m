@@ -21,6 +21,12 @@
 
 @property (nonatomic, strong) NSMutableArray *points;
 
+@property (strong, nonatomic) CAShapeLayer *pathLayer;
+@property (strong, nonatomic) CAShapeLayer *abovePathLayer;
+@property (strong, nonatomic) CAShapeLayer *belowPathLayer;
+@property (strong, nonatomic) CAShapeLayer *verticalReferenceLinesPathLayer;
+@property (strong, nonatomic) CAShapeLayer *horizontalReferenceLinesPathLayer;
+
 @end
 
 @implementation BEMLine
@@ -63,20 +69,20 @@
 
         if (self.enableLeftReferenceFrameLine) {
             // Left Line
-            [referenceFramePath moveToPoint:CGPointMake(0+self.referenceLineWidth/4, self.frame.size.height)];
-            [referenceFramePath addLineToPoint:CGPointMake(0+self.referenceLineWidth/4, 0)];
+            [referenceFramePath moveToPoint:CGPointMake(0+self.referenceLineWidth/2, self.frame.size.height)];
+            [referenceFramePath addLineToPoint:CGPointMake(0+self.referenceLineWidth/2, 0)];
         }
 
         if (self.enableTopReferenceFrameLine) {
             // Top Line
-            [referenceFramePath moveToPoint:CGPointMake(0+self.referenceLineWidth/4, 0)];
+            [referenceFramePath moveToPoint:CGPointMake(0+self.referenceLineWidth/2, 0)];
             [referenceFramePath addLineToPoint:CGPointMake(self.frame.size.width, 0)];
         }
 
         if (self.enableRightReferenceFrameLine) {
             // Right Line
-            [referenceFramePath moveToPoint:CGPointMake(self.frame.size.width - self.referenceLineWidth/4, self.frame.size.height)];
-            [referenceFramePath addLineToPoint:CGPointMake(self.frame.size.width - self.referenceLineWidth/4, 0)];
+            [referenceFramePath moveToPoint:CGPointMake(self.frame.size.width - self.referenceLineWidth/2, self.frame.size.height)];
+            [referenceFramePath addLineToPoint:CGPointMake(self.frame.size.width - self.referenceLineWidth/2, 0)];
         }
     }
 
@@ -102,9 +108,14 @@
 
         if (self.arrayOfHorizontalRefrenceLinePoints.count > 0) {
             for (NSNumber *yNumber in self.arrayOfHorizontalRefrenceLinePoints) {
-                CGPoint initialPoint = CGPointMake(0, [yNumber floatValue]);
-                CGPoint finalPoint = CGPointMake(self.frame.size.width, [yNumber floatValue]);
-
+                CGFloat yValue = yNumber.floatValue;
+                if ( yValue < 0.0f || yValue > self.frame.size.height )
+                {
+                    continue;
+                }
+                CGPoint initialPoint = CGPointMake(0.0f, yValue);
+                CGPoint finalPoint = CGPointMake(self.frame.size.width, yValue);
+                
                 [horizontalReferenceLinesPath moveToPoint:initialPoint];
                 [horizontalReferenceLinesPath addLineToPoint:finalPoint];
             }
@@ -136,13 +147,12 @@
     UIBezierPath *fillTop;
     UIBezierPath *fillBottom;
 
-    CGFloat xIndexScale = self.frame.size.width/([self.arrayOfPoints count] - 1);
-
     self.points = [NSMutableArray arrayWithCapacity:self.arrayOfPoints.count];
     for (int i = 0; i < self.arrayOfPoints.count; i++) {
-        CGPoint value = CGPointMake(xIndexScale * i, [self.arrayOfPoints[i] CGFloatValue]);
-        if (value.y != BEMNullGraphValue || !self.interpolateNullValues) {
-            [self.points addObject:[NSValue valueWithCGPoint:value]];
+        NSValue *pointValue = self.arrayOfPoints[i];
+        CGPoint point = [pointValue CGPointValue];
+        if (point.y != BEMNullGraphValue || !self.interpolateNullValues) {
+            [self.points addObject:pointValue];
         }
     }
 
@@ -165,11 +175,27 @@
     //----------------------------//
     //----- Draw Fill Colors -----//
     //----------------------------//
-    [self.topColor set];
-    [fillTop fillWithBlendMode:kCGBlendModeNormal alpha:self.topAlpha];
-
-    [self.bottomColor set];
-    [fillBottom fillWithBlendMode:kCGBlendModeNormal alpha:self.bottomAlpha];
+    CAShapeLayer *abovePathLayer = [CAShapeLayer layer];
+    abovePathLayer.frame = self.bounds;
+    abovePathLayer.path  = fillTop.CGPath;
+    abovePathLayer.fillColor = self.topColor.CGColor;
+    abovePathLayer.opacity = self.topAlpha;
+    abovePathLayer.lineWidth = 0.0f;
+    abovePathLayer.lineJoin = kCALineJoinBevel;
+    abovePathLayer.lineCap = kCALineCapRound;
+    [self.layer addSublayer:abovePathLayer];
+    self.abovePathLayer = abovePathLayer;
+    
+    CAShapeLayer *belowPathLayer = [CAShapeLayer layer];
+    belowPathLayer.frame = self.bounds;
+    belowPathLayer.path  = fillBottom.CGPath;
+    belowPathLayer.fillColor = self.bottomColor.CGColor;
+    belowPathLayer.opacity = self.bottomAlpha;
+    belowPathLayer.lineWidth = 0.0f;
+    belowPathLayer.lineJoin = kCALineJoinBevel;
+    belowPathLayer.lineCap = kCALineCapRound;
+    [self.layer addSublayer:belowPathLayer];
+    self.belowPathLayer = belowPathLayer;
 
     CGContextRef ctx = UIGraphicsGetCurrentContext();
     if (self.topGradient != nil) {
@@ -198,14 +224,14 @@
         verticalReferenceLinesPathLayer.path = verticalReferenceLinesPath.CGPath;
         verticalReferenceLinesPathLayer.opacity = self.lineAlpha == 0 ? 0.1 : self.lineAlpha/2;
         verticalReferenceLinesPathLayer.fillColor = nil;
-        verticalReferenceLinesPathLayer.lineWidth = self.referenceLineWidth/2;
+        verticalReferenceLinesPathLayer.lineWidth = self.referenceLineWidth;
         
         if (self.lineDashPatternForReferenceYAxisLines) {
             verticalReferenceLinesPathLayer.lineDashPattern = self.lineDashPatternForReferenceYAxisLines;
         }
 
-        if (self.refrenceLineColor) {
-            verticalReferenceLinesPathLayer.strokeColor = self.refrenceLineColor.CGColor;
+        if (self.referenceLineColor) {
+            verticalReferenceLinesPathLayer.strokeColor = self.referenceLineColor.CGColor;
         } else {
             verticalReferenceLinesPathLayer.strokeColor = self.color.CGColor;
         }
@@ -213,20 +239,20 @@
         if (self.animationTime > 0)
             [self animateForLayer:verticalReferenceLinesPathLayer withAnimationType:self.animationType isAnimatingReferenceLine:YES];
         [self.layer addSublayer:verticalReferenceLinesPathLayer];
-
+        self.verticalReferenceLinesPathLayer = verticalReferenceLinesPathLayer;
 
         CAShapeLayer *horizontalReferenceLinesPathLayer = [CAShapeLayer layer];
         horizontalReferenceLinesPathLayer.frame = self.bounds;
         horizontalReferenceLinesPathLayer.path = horizontalReferenceLinesPath.CGPath;
         horizontalReferenceLinesPathLayer.opacity = self.lineAlpha == 0 ? 0.1 : self.lineAlpha/2;
         horizontalReferenceLinesPathLayer.fillColor = nil;
-        horizontalReferenceLinesPathLayer.lineWidth = self.referenceLineWidth/2;
+        horizontalReferenceLinesPathLayer.lineWidth = self.referenceLineWidth;
         if(self.lineDashPatternForReferenceXAxisLines) {
             horizontalReferenceLinesPathLayer.lineDashPattern = self.lineDashPatternForReferenceXAxisLines;
         }
 
-        if (self.refrenceLineColor) {
-            horizontalReferenceLinesPathLayer.strokeColor = self.refrenceLineColor.CGColor;
+        if (self.referenceLineColor) {
+            horizontalReferenceLinesPathLayer.strokeColor = self.referenceLineColor.CGColor;
         } else {
             horizontalReferenceLinesPathLayer.strokeColor = self.color.CGColor;
         }
@@ -234,6 +260,7 @@
         if (self.animationTime > 0)
             [self animateForLayer:horizontalReferenceLinesPathLayer withAnimationType:self.animationType isAnimatingReferenceLine:YES];
         [self.layer addSublayer:horizontalReferenceLinesPathLayer];
+        self.horizontalReferenceLinesPathLayer = horizontalReferenceLinesPathLayer;
     }
 
     CAShapeLayer *referenceLinesPathLayer = [CAShapeLayer layer];
@@ -241,9 +268,9 @@
     referenceLinesPathLayer.path = referenceFramePath.CGPath;
     referenceLinesPathLayer.opacity = self.lineAlpha == 0 ? 0.1 : self.lineAlpha/2;
     referenceLinesPathLayer.fillColor = nil;
-    referenceLinesPathLayer.lineWidth = self.referenceLineWidth/2;
+    referenceLinesPathLayer.lineWidth = self.referenceLineWidth;
 
-    if (self.refrenceLineColor) referenceLinesPathLayer.strokeColor = self.refrenceLineColor.CGColor;
+    if (self.referenceLineColor) referenceLinesPathLayer.strokeColor = self.referenceLineColor.CGColor;
     else referenceLinesPathLayer.strokeColor = self.color.CGColor;
 
     if (self.animationTime > 0)
@@ -263,6 +290,7 @@
         if (self.animationTime > 0) [self animateForLayer:pathLayer withAnimationType:self.animationType isAnimatingReferenceLine:NO];
         if (self.lineGradient) [self.layer addSublayer:[self backgroundGradientLayerForLayer:pathLayer]];
         else [self.layer addSublayer:pathLayer];
+        self.pathLayer = pathLayer;
     }
 
     if (self.averageLine.enableAverageLine == YES) {
@@ -284,30 +312,88 @@
     }
 }
 
+- (void)setColor:(UIColor *)color {
+    _color = color;
+    [self.pathLayer setStrokeColor:color.CGColor];
+}
+
+- (void)setShadowColor:(UIColor *)shadowColor {
+    _shadowColor = shadowColor;
+    [self.pathLayer setShadowColor:shadowColor.CGColor];
+}
+
+- (void)setTopColor:(UIColor *)topColor {
+    _topColor = topColor;
+    [self.abovePathLayer setFillColor:topColor.CGColor];
+}
+
+- (void)setTopAlpha:(float)topAlpha {
+    _topAlpha = topAlpha;
+    [self.abovePathLayer setOpacity:topAlpha];
+}
+
+- (void)setBottomColor:(UIColor *)bottomColor {
+    _bottomColor = bottomColor;
+    [self.belowPathLayer setFillColor:bottomColor.CGColor];
+}
+
+- (void)setBottomAlpha:(float)bottomAlpha {
+    _bottomAlpha = bottomAlpha;
+    [self.belowPathLayer setOpacity:bottomAlpha];
+}
+
+- (void)setReferenceLineColor:(UIColor *)referenceLineColor {
+    _referenceLineColor = referenceLineColor;
+    struct CGColor *referenceLineCGColor = ( referenceLineColor ? referenceLineColor.CGColor : self.color.CGColor );
+    self.horizontalReferenceLinesPathLayer.strokeColor = referenceLineCGColor;
+    self.verticalReferenceLinesPathLayer.strokeColor = referenceLineCGColor;
+}
+
 - (NSArray *)topPointsArray {
-    CGPoint topPointZero = CGPointMake(0,0);
-    CGPoint topPointFull = CGPointMake(self.frame.size.width, 0);
     NSMutableArray *topPoints = [NSMutableArray arrayWithArray:self.points];
-    [topPoints insertObject:[NSValue valueWithCGPoint:topPointZero] atIndex:0];
-    [topPoints addObject:[NSValue valueWithCGPoint:topPointFull]];
+    NSNumber *firstPointValue = [topPoints firstObject];
+    CGPoint firstPoint = firstPointValue != nil ? [firstPointValue CGPointValue] : CGPointMake(0.0f, self.frame.size.height);
+    NSNumber *lastPointValue = [topPoints lastObject];
+    CGPoint lastPoint = lastPointValue != nil ? [lastPointValue CGPointValue] : CGPointMake(self.frame.size.width, self.frame.size.height);
+    
+    NSValue *topPointZeroValue = [NSValue valueWithCGPoint:CGPointMake(0.0f, 0.0f)];
+    NSValue *bottomPointZeroValue = [NSValue valueWithCGPoint:CGPointMake(0.0f, self.frame.size.height)];
+    NSValue *bottomPointStartValue = [NSValue valueWithCGPoint:CGPointMake(firstPoint.x, self.frame.size.height)];
+    NSArray *startPointValues = @[topPointZeroValue, bottomPointZeroValue, bottomPointStartValue];
+    
+    NSValue *bottomPointEndValue = [NSValue valueWithCGPoint:CGPointMake(lastPoint.x, self.frame.size.height)];
+    NSValue *bottomPointFullValue = [NSValue valueWithCGPoint:CGPointMake(self.frame.size.width, self.frame.size.height)];
+    NSValue *topPointFullValue = [NSValue valueWithCGPoint:CGPointMake(self.frame.size.width, 0.0f)];
+    NSArray *endPointValues = @[bottomPointEndValue, bottomPointFullValue, topPointFullValue];
+    
+    [topPoints insertObjects:startPointValues atIndexes:[NSIndexSet indexSetWithIndexesInRange:NSMakeRange(0, startPointValues.count)]];
+    [topPoints addObjectsFromArray:endPointValues];
     return topPoints;
 }
 
 - (NSArray *)bottomPointsArray {
-    CGPoint bottomPointZero = CGPointMake(0, self.frame.size.height);
-    CGPoint bottomPointFull = CGPointMake(self.frame.size.width, self.frame.size.height);
     NSMutableArray *bottomPoints = [NSMutableArray arrayWithArray:self.points];
-    [bottomPoints insertObject:[NSValue valueWithCGPoint:bottomPointZero] atIndex:0];
-    [bottomPoints addObject:[NSValue valueWithCGPoint:bottomPointFull]];
+    
+    NSNumber *firstPointValue = [bottomPoints firstObject];
+    CGPoint firstPoint = firstPointValue != nil ? [firstPointValue CGPointValue] : CGPointMake(0.0f, self.frame.size.height);
+    NSNumber *lastPointValue = [bottomPoints lastObject];
+    CGPoint lastPoint = lastPointValue != nil ? [lastPointValue CGPointValue] : CGPointMake(self.frame.size.width, self.frame.size.height);
+    CGPoint bottomPointStart = CGPointMake(firstPoint.x, self.frame.size.height);
+    CGPoint bottomPointEnd = CGPointMake(lastPoint.x, self.frame.size.height);
+    [bottomPoints insertObject:[NSValue valueWithCGPoint:bottomPointStart] atIndex:0];
+    [bottomPoints addObject:[NSValue valueWithCGPoint:bottomPointEnd]];
     return bottomPoints;
 }
 
 + (UIBezierPath *)linesToPoints:(NSArray *)points {
     UIBezierPath *path = [UIBezierPath bezierPath];
+    if ( [points count] == 0 ) {
+        return path;
+    }
     NSValue *value = points[0];
     CGPoint p1 = [value CGPointValue];
     [path moveToPoint:p1];
-
+    
     for (NSUInteger i = 1; i < points.count; i++) {
         value = points[i];
         CGPoint p2 = [value CGPointValue];
@@ -318,26 +404,29 @@
 
 + (UIBezierPath *)quadCurvedPathWithPoints:(NSArray *)points {
     UIBezierPath *path = [UIBezierPath bezierPath];
-
+    if ( [points count] == 0 ) {
+        return path;
+    }
+    
     NSValue *value = points[0];
     CGPoint p1 = [value CGPointValue];
     [path moveToPoint:p1];
-
+    
     if (points.count == 2) {
         value = points[1];
         CGPoint p2 = [value CGPointValue];
         [path addLineToPoint:p2];
         return path;
     }
-
+    
     for (NSUInteger i = 1; i < points.count; i++) {
         value = points[i];
         CGPoint p2 = [value CGPointValue];
-
+        
         CGPoint midPoint = midPointForPoints(p1, p2);
         [path addQuadCurveToPoint:midPoint controlPoint:controlPointForPoints(midPoint, p1)];
         [path addQuadCurveToPoint:p2 controlPoint:controlPointForPoints(midPoint, p2)];
-
+        
         p1 = p2;
     }
     return path;

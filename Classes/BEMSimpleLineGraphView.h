@@ -132,6 +132,10 @@ IB_DESIGNABLE @interface BEMSimpleLineGraphView : UIView <UIGestureRecognizerDel
 - (nullable NSArray *)graphLabelsForXAxis;
 
 
+/// Pans the graph to the given X-value.
+- (void)panToXValue:(CGFloat)xValue finishPan:(BOOL)finishPan;
+
+
 
 //------------------------------------------------------------------------------------//
 //----- PROPERTIES -------------------------------------------------------------------//
@@ -190,8 +194,18 @@ IB_DESIGNABLE @interface BEMSimpleLineGraphView : UIView <UIGestureRecognizerDel
 @property (nonatomic) BOOL enableReferenceXAxisLines;
 
 
+/** Sets the X-axis values to draw reference lines for. Requires \p enableReferenceXAxisLines to be enabled. If nil set,
+ it will default to the label points. */
+@property (nonatomic) NSArray *referenceXAxisValues;
+
+
 /// Draws a translucent horizontal lines along the graph for each Y-Axis label, when set to YES. Default value is NO.
 @property (nonatomic) BOOL enableReferenceYAxisLines;
+
+
+/** Sets the Y-axis values to draw reference lines for. Requires \p enableReferenceYAxisLines to be enabled. If nil set,
+ it will default to the label points. */
+@property (nonatomic) NSArray *referenceYAxisValues;
 
 
 /** Draws a translucent frame between the graph and any enabled axis, when set to YES. Default value is NO.
@@ -260,6 +274,10 @@ IB_DESIGNABLE @interface BEMSimpleLineGraphView : UIView <UIGestureRecognizerDel
 
 /// The drawing direction of the line gradient color, which defaults to horizontal
 @property (nonatomic) BEMLineGradientDirection gradientLineDirection;
+
+
+/// Color of the shadow of the graph.
+@property (strong, nonatomic) IBInspectable UIColor *colorLineShadow;
 
 
 /// Alpha of the line of the graph.
@@ -403,6 +421,18 @@ IB_DESIGNABLE @interface BEMSimpleLineGraphView : UIView <UIGestureRecognizerDel
  @param index The index from left to right of a given label on the X-axis. Is the same index as the one for the points. The first value for the index is 0. */
 - (nullable NSString *)lineGraph:(nonnull BEMSimpleLineGraphView *)graph labelOnXAxisForIndex:(NSInteger)index;
 
+/** The value for the point at the given index.
+ @param graph The graph object requesting the point value.
+ @param index The index from left to right of a given point (X-axis). The first value for the index is 0.
+ @return The X-axis value at a given index. */
+- (CGFloat)lineGraph:(BEMSimpleLineGraphView *)graph xValueForPointAtIndex:(NSInteger)index;
+
+/** The string to display on the label on the X-axis at a given value.
+ @param graph The graph object which is requesting the label on the specified X-Axis position.
+ @param value The value of a given label on the X-axis. Is the same index as the one for the points.
+ @return The string to show for the given X-axis value. */
+- (nullable NSString *)lineGraph:(nonnull BEMSimpleLineGraphView *)graph labelOnXAxisForValue:(CGFloat)value;
+
 
 @end
 
@@ -478,6 +508,18 @@ IB_DESIGNABLE @interface BEMSimpleLineGraphView : UIView <UIGestureRecognizerDel
 - (CGFloat)minValueForLineGraph:(BEMSimpleLineGraphView *)graph;
 
 
+/** Optional method to set the maximum value of the X-Axis. If not implemented, the maximum value will align to the right side of the graph. \p minXValueForLineGraph: must be implemented for this to take effect.
+ @param graph The graph object requesting the maximum value.
+ @return The maximum value of the Y-Axis. */
+- (CGFloat)maxXValueForLineGraph:(BEMSimpleLineGraphView *)graph;
+
+
+/** Optional method to set the minimum value of the Y-Axis. If not implemented, the minimum value will align to the left side of the graph.
+ @param graph The graph object requesting the minimum value.
+ @return The minimum value of the Y-Axis. */
+- (CGFloat)minXValueForLineGraph:(BEMSimpleLineGraphView *)graph;
+
+
 /** Optional method to control whether a label indicating NO DATA will be shown while number of data is zero
  @param graph The graph object for the NO DATA label
  @return The boolean value indicating the availability of the NO DATA label. */
@@ -512,17 +554,17 @@ IB_DESIGNABLE @interface BEMSimpleLineGraphView : UIView <UIGestureRecognizerDel
 
 //----- TOUCH EVENTS -----//
 
+/** Sent to the delegate when the graph is panned. This can be from user input or a touch event.
+ @param graph The graph object which has been panned.
+ @param index The closest index (X-axis) from the location the user is currently touching. */
+- (void)lineGraph:(BEMSimpleLineGraphView *)graph pannedToClosestIndex:(NSInteger)index;
+
 
 /** Sent to the delegate when the user starts touching the graph. The property 'enableTouchReport' must be set to YES.
  @param graph The graph object which was touched by the user.
- @param index The closest index (X-axis) from the location the user is currently touching. */
-- (void)lineGraph:(BEMSimpleLineGraphView *)graph didTouchGraphWithClosestIndex:(NSInteger)index;
-
-
-/** Sent to the delegate when the user stops touching the graph.
- @param graph The graph object which was touched by the user.
- @param index The closest index (X-axis) from the location the user last touched. */
-- (void)lineGraph:(BEMSimpleLineGraphView *)graph didReleaseTouchFromGraphWithClosestIndex:(CGFloat)index;
+ @param value The X-axis value from the location the user is currently touching.
+ @param endOfTouch Whether or not the touch */
+- (void)lineGraph:(BEMSimpleLineGraphView *)graph didTouchGraphWithXAxisValue:(CGFloat)value endOfTouch:(BOOL)endOfTouch;
 
 
 //----- X AXIS -----//
@@ -558,6 +600,20 @@ IB_DESIGNABLE @interface BEMSimpleLineGraphView : UIView <UIGestureRecognizerDel
 - (NSArray *)incrementPositionsForXAxisOnLineGraph:(BEMSimpleLineGraphView *)graph;
 
 
+/** The starting value to plot X-Axis values.  MUST ALSO IMPLEMENT incrementValueForXAxisOnLineGraph FOR THIS TO TAKE EFFECT
+ @discussion This allows you to specify a custom starting index for drawing x axis labels
+ @param graph The graph object which is requesting the number of gaps between the labels.
+ @return The graph data index to begin drawing labels */
+- (CGFloat)baseValueForXAxisOnLineGraph:(BEMSimpleLineGraphView *)graph;
+
+
+/** The increment to apply when drawing X-Axis labels.  This increment is applied to the base x axis index.  MUST ALSO IMPLEMENT baseValueForXAxisOnLineGraph FOR THIS TO TAKE EFFECT
+ @discussion This allows you to set a custom interval in drawing x axis labels. When this is set in conjuction with baseValueForXAxisOnLineGraph, `numberOfGapsBetweenLabelsOnLineGraph` is ignored
+ @param graph The graph object which is requesting the number of gaps between the labels.
+ @return The increment between X-Axis labels */
+- (CGFloat)incrementValueForXAxisOnLineGraph:(BEMSimpleLineGraphView *)graph;
+
+
 
 //----- Y AXIS -----//
 
@@ -580,6 +636,18 @@ IB_DESIGNABLE @interface BEMSimpleLineGraphView : UIView <UIGestureRecognizerDel
  @return The suffix to prepend to append to the y axis. */
 - (NSString *)yAxisSuffixOnLineGraph:(BEMSimpleLineGraphView *)graph;
 
+
+/** The string to display on the label on the Y-axis at a given value.
+ @param graph The graph object which is requesting the label on the specified Y-Axis position.
+ @param value The value of a given label on the Y-axis. Is the same index as the one for the points.
+ @return The string to show for the given Y-axis value. */
+- (NSString *)lineGraph:(BEMSimpleLineGraphView *)graph labelOnYAxisForValue:(CGFloat)value;
+
+/** The array of values to show labels for on the Y-axis.
+ @param graph The graph object which is requesting the label on the specified Y-Axis position.
+ @param value The value of a given label on the Y-axis. Is the same index as the one for the points.
+ @return The string to show for the given Y-axis value. */
+- (NSArray *)yAxisValuesToShowForLineGraph:(BEMSimpleLineGraphView *)graph;
 
 /** Starting value to begin drawing Y-Axis labels  MUST ALSO IMPLEMENT incrementValueForYAxisOnLineGraph FOR THIS TO TAKE EFFECT
  @discussion This allows you to finally hone the granularity of the data label.  Instead of drawing values like 11.24, 

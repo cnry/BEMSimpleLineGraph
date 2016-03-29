@@ -95,6 +95,9 @@ typedef NS_ENUM(NSUInteger, BEMLineGradientDirection) {
 /// The line color. A single, solid color which is applied to the entire line. If the \p gradient property is non-nil this property will be ignored.
 @property (strong, nonatomic) UIColor *color;
 
+/// The line shadow color.
+@property (strong, nonatomic) UIColor *shadowColor;
+
 /// The color of the area above the line, inside of its superview
 @property (strong, nonatomic) UIColor *topColor;
 
@@ -114,7 +117,7 @@ typedef NS_ENUM(NSUInteger, BEMLineGradientDirection) {
 @property (nonatomic) BEMLineGradientDirection lineGradientDirection;
 
 /// The reference line color. Defaults to `color`.
-@property (strong, nonatomic) UIColor *refrenceLineColor;
+@property (strong, nonatomic) UIColor *referenceLineColor;
 
 
 

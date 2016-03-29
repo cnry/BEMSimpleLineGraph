@@ -20,11 +20,10 @@
     return self;
 }
 
-- (void)drawRect:(CGRect)rect {
-    CGContextRef ctx = UIGraphicsGetCurrentContext();
-    CGContextAddEllipseInRect(ctx, rect);
-    [self.Pointcolor set];
-    CGContextFillPath(ctx);
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    self.layer.cornerRadius = MAX(self.frame.size.width, self.frame.size.height) / 2.0f;
 }
 
 @end
