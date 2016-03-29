@@ -661,7 +661,7 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
 
 - (void)drawXAxis {
     if (!self.enableXAxisLabel) return;
-    if (![self.dataSource respondsToSelector:@selector(lineGraph:labelOnXAxisForValue:)]) return;
+    if (![self.dataSource respondsToSelector:@selector(lineGraph:labelOnXAxisForIndex:)] && ![self.dataSource respondsToSelector:@selector(lineGraph:labelOnXAxisForValue:)]) return;
     
     for (UIView *subview in [self subviews]) {
         if ([subview isKindOfClass:[UILabel class]] && subview.tag == DotLastTag10000) [subview removeFromSuperview];
@@ -1140,7 +1140,7 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
         prefix = [self.delegate popUpPrefixForlineGraph:self];
 
     int index = (int)(circleDot.tag - DotFirstTag100);
-    NSNumber *value = dataPoints[index]; // @((NSInteger) circleDot.absoluteValue)
+    NSNumber *value = dataValues[index]; // @((NSInteger) circleDot.absoluteValue)
     NSString *formattedValue = [NSString stringWithFormat:self.formatStringForValues, value.doubleValue];
     permanentPopUpLabel.text = [NSString stringWithFormat:@"%@%@%@", prefix, formattedValue, suffix];
     

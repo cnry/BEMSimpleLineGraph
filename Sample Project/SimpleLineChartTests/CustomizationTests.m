@@ -14,11 +14,11 @@
 typedef NS_ENUM(NSInteger, BEMInternalTags)
 {
     DotFirstTag100 = 100,
-    DotLastTag1000 = 1000,
-    LabelYAxisTag2000 = 2000,
-    BackgroundYAxisTag2100 = 2100,
-    BackgroundXAxisTag2200 = 2200,
-    PermanentPopUpViewTag3100 = 3100,
+    DotLastTag10000 = 10000,
+    LabelYAxisTag20000 = 20000,
+    BackgroundYAxisTag21000 = 21000,
+    BackgroundXAxisTag22000 = 22000,
+    PermanentPopUpViewTag31000 = 31000,
 };
 
 @interface CustomizationTests : XCTestCase <BEMSimpleLineGraphDelegate, BEMSimpleLineGraphDataSource>
@@ -72,7 +72,7 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     
     NSMutableArray *dots = [NSMutableArray new];
     for (UIView *dot in self.lineGraph.subviews) {
-        if ([dot isKindOfClass:[BEMCircle class]] && dot.tag >= DotFirstTag100 && dot.tag <= DotLastTag1000) {
+        if ([dot isKindOfClass:[BEMCircle class]] && dot.tag >= DotFirstTag100 && dot.tag <= DotLastTag10000) {
             [dots addObject:dot];
         }
     }
@@ -82,10 +82,8 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     for (BEMCircle *dot in dots) {
         XCTAssert(dot.bounds.size.width == sizePoint, @"Dots size point has been customized to 20.0");
         XCTAssert(dot.bounds.size.height == sizePoint, @"Dots size point has been customized to 20.0");
-        XCTAssert([dot.Pointcolor isEqual:[UIColor greenColor]], @"Dots color has been set to green");
         XCTAssert(dot.absoluteValue == pointValue, @"Dots are expected to have a value equal to the value returned by the data source method 'valueForPointAtIndex:'");
         XCTAssert(dot.alpha >= 0.98 && dot.alpha <= 1.0, @"Dots are expected to always be displayed (alpha of 0.7)");
-        XCTAssert([dot.backgroundColor isEqual:[UIColor clearColor]], @"Dots are expected to have a clearColor background color by default");
     }
 }
 
@@ -103,7 +101,7 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
         XCTAssert([XAxisLabel.text isEqualToString:xAxisLabelString], @"The X-Axis label's strings should be the same as the one returned by the data source method 'labelOnXAxisForIndex:'");
         XCTAssert([XAxisLabel.backgroundColor isEqual:[UIColor clearColor]], @"X-Axis labels are expected to have a clear beackground color by default");
         XCTAssert(XAxisLabel.textAlignment == NSTextAlignmentCenter, @"X-Axis labels are expected to have their text centered by default");
-        XCTAssert(XAxisLabel.tag == DotLastTag1000, @"X-Axis labels are expected to have a certain tag by default");
+        XCTAssert(XAxisLabel.tag == DotLastTag10000, @"X-Axis labels are expected to have a certain tag by default");
         XCTAssert(XAxisLabel.font == font, @"X-Axis label's font is expected to be the customized one");
         XCTAssert(XAxisLabel.textColor = [UIColor greenColor], @"X-Axis label's text color is expected to tbe the customized one");
     }
@@ -118,7 +116,7 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     
     NSMutableArray *popUps = [NSMutableArray new];
     for (BEMPermanentPopupView *popUp in self.lineGraph.subviews) {
-        if ([popUp isKindOfClass:[BEMPermanentPopupView class]] && popUp.tag == PermanentPopUpViewTag3100) {
+        if ([popUp isKindOfClass:[BEMPermanentPopupView class]] && popUp.tag == PermanentPopUpViewTag31000) {
             [popUps addObject:popUp];
         }
     }
