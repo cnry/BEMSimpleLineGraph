@@ -205,9 +205,9 @@
     return 2;
 }
 
-- (NSString *)lineGraph:(BEMSimpleLineGraphView *)graph labelOnXAxisForIndex:(NSInteger)index {
+- (NSString *)lineGraph:(BEMSimpleLineGraphView *)graph labelOnXAxisForValue:(CGFloat)value {
 
-    NSString *label = [self labelForDateAtIndex:index];
+    NSString *label = [self labelForDateAtIndex:(NSUInteger)value];
     return [label stringByReplacingOccurrencesOfString:@" " withString:@"\n"];
 }
 
@@ -262,6 +262,7 @@
 //    return 2;
 //}
 
+//TODO: Add logic for incremental/designated X axis labels.
 //- (NSArray *)incrementPositionsForXAxisOnLineGraph:(BEMSimpleLineGraphView *)graph {
 //    NSMutableArray *positions = [NSMutableArray array];
 //    NSCalendar *calendar = [NSCalendar currentCalendar];
