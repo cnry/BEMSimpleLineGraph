@@ -226,8 +226,8 @@
         verticalReferenceLinesPathLayer.fillColor = nil;
         verticalReferenceLinesPathLayer.lineWidth = self.referenceLineWidth;
         
-        if (self.lineDashPatternForReferenceYAxisLines) {
-            verticalReferenceLinesPathLayer.lineDashPattern = self.lineDashPatternForReferenceYAxisLines;
+        if (self.lineDashPatternForReferenceXAxisLines) {
+            verticalReferenceLinesPathLayer.lineDashPattern = self.lineDashPatternForReferenceXAxisLines;
         }
 
         if (self.referenceLineColor) {
@@ -247,8 +247,8 @@
         horizontalReferenceLinesPathLayer.opacity = self.lineAlpha == 0 ? 0.1 : self.lineAlpha/2;
         horizontalReferenceLinesPathLayer.fillColor = nil;
         horizontalReferenceLinesPathLayer.lineWidth = self.referenceLineWidth;
-        if(self.lineDashPatternForReferenceXAxisLines) {
-            horizontalReferenceLinesPathLayer.lineDashPattern = self.lineDashPatternForReferenceXAxisLines;
+        if(self.lineDashPatternForReferenceYAxisLines) {
+            horizontalReferenceLinesPathLayer.lineDashPattern = self.lineDashPatternForReferenceYAxisLines;
         }
 
         if (self.referenceLineColor) {
