@@ -1113,7 +1113,7 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     else if (self.referenceYAxisValues == nil) return;
     else if (![self.delegate respondsToSelector:@selector(lineGraph:labelOnYAxisReferenceLineForValue:)]) return;
     
-    for (UIView *yAxisReferenceLabel in yAxisReferenceLabels) {
+    for (UILabel *yAxisReferenceLabel in yAxisReferenceLabels) {
         [yAxisReferenceLabel removeFromSuperview];
     }
     
