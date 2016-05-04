@@ -29,6 +29,7 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     BackgroundYAxisTag21000 = 21000,
     BackgroundXAxisTag22000 = 22000,
     PermanentPopUpViewTag31000 = 31000,
+    ReferenceLabelYAxisTag40000 = 40000,
 };
 
 @interface BEMSimpleLineGraphView () {
@@ -71,6 +72,9 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     
     /// All of the Y-Axis Labels
     NSMutableArray *yAxisLabels;
+    
+    /// All of the Y-Axis Reference Labels
+    NSMutableArray *yAxisReferenceLabels;
     
     /// All of the Circle Views
     NSMutableArray *circleViews;
@@ -223,6 +227,7 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     dataPoints = [NSMutableArray array];
     xAxisLabels = [NSMutableArray array];
     yAxisLabels = [NSMutableArray array];
+    yAxisReferenceLabels = [NSMutableArray array];
     circleViews = [NSMutableArray array];
 
     // Initialize BEM Objects
@@ -452,6 +457,18 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     _colorYaxisLabel = colorYaxisLabel;
     for (UILabel *yAxisLabel in yAxisLabels) {
         [yAxisLabel setTextColor:colorYaxisLabel];
+    }
+    if (self.colorReferenceYaxisLabel == nil) {
+        for (UILabel *yAxisReferenceLabel in yAxisReferenceLabels) {
+            [yAxisReferenceLabel setTextColor:colorYaxisLabel];
+        }
+    }
+}
+
+- (void)setColorReferenceYaxisLabel:(UIColor *)colorReferenceYaxisLabel {
+    _colorReferenceYaxisLabel = colorReferenceYaxisLabel;
+    for (UILabel *yAxisReferenceLabel in yAxisReferenceLabels) {
+        [yAxisReferenceLabel setTextColor:colorReferenceYaxisLabel ?: self.colorYaxisLabel];
     }
 }
 
@@ -1077,8 +1094,8 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     }
     
     [yAxisReferencePoints removeAllObjects];
-    if ( self.referenceYAxisValues != nil ) {
-        for ( NSNumber *yAxisValue in self.referenceYAxisValues ) {
+    if (self.referenceYAxisValues != nil) {
+        for (NSNumber *yAxisValue in self.referenceYAxisValues) {
             CGFloat yAxisPosition = [self yPositionForDotValue:yAxisValue.doubleValue];
             [yAxisReferencePoints addObject:@(yAxisPosition)];
         }
@@ -1086,7 +1103,52 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
         [yAxisReferencePoints addObjectsFromArray:yAxisLabelPoints];
     }
     
+    [self drawYAxisReferenceLabels];
+    
     [self didFinishDrawingIncludingYAxis:YES];  
+}
+
+- (void)drawYAxisReferenceLabels {
+    if (!self.enableReferenceYAxisLines) return;
+    else if (self.referenceYAxisValues == nil) return;
+    else if (![self.delegate respondsToSelector:@selector(lineGraph:labelOnYAxisReferenceLineForValue:)]) return;
+    
+    for (UILabel *yAxisReferenceLabel in yAxisReferenceLabels) {
+        [yAxisReferenceLabel removeFromSuperview];
+    }
+    
+    [yAxisReferenceLabels removeAllObjects];
+    
+    for (NSNumber *yAxisValue in self.referenceYAxisValues)
+    {
+        UILabel *referenceLabelYAxis = [[UILabel alloc] init];
+        referenceLabelYAxis.text = [self.delegate lineGraph:self labelOnYAxisReferenceLineForValue:yAxisValue.doubleValue];
+        referenceLabelYAxis.font = self.referenceLabelFont ?: self.labelFont;
+        referenceLabelYAxis.textAlignment = NSTextAlignmentRight;
+        referenceLabelYAxis.textColor = self.colorYaxisLabel;
+        referenceLabelYAxis.backgroundColor = [UIColor clearColor];
+        referenceLabelYAxis.tag = ReferenceLabelYAxisTag40000;
+        [referenceLabelYAxis sizeToFit];
+        
+        CGSize labelSize = referenceLabelYAxis.frame.size;
+        CGFloat labelOriginX;
+        if (self.positionYAxisRight) {
+            labelOriginX = 5.0f;
+        } else {
+            labelOriginX = self.frame.size.width - 5.0f - labelSize.width;
+        }
+        
+        CGFloat referenceYAxisPosition = [self yPositionForDotValue:yAxisValue.doubleValue];
+        CGRect rect = CGRectMake(labelOriginX, referenceYAxisPosition - labelSize.height - 2.0f, labelSize.width, labelSize.height);
+        if (!CGRectContainsRect(self.bounds, rect)) {
+            rect.origin = CGPointMake(labelOriginX, referenceYAxisPosition + 2.0f);
+        }
+        [referenceLabelYAxis setFrame:rect];
+        
+        [self addSubview:referenceLabelYAxis];
+
+        [yAxisReferenceLabels addObject:referenceLabelYAxis];
+    }
 }
 
 /// Area on the graph that doesn't include the axes
@@ -1325,6 +1387,14 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     return xAxisLabels;
 }
 
+- (NSArray *)graphLabelsForYAxis {
+    return yAxisLabels;
+}
+
+- (NSArray *)graphReferenceLabelsForYAxis {
+    return yAxisReferenceLabels;
+}
+
 - (void)setAnimationGraphStyle:(BEMLineAnimation)animationGraphStyle {
     _animationGraphStyle = animationGraphStyle;
     if (_animationGraphStyle == BEMLineAnimationNone)
@@ -1389,7 +1459,7 @@ typedef NS_ENUM(NSInteger, BEMInternalTags)
     }
     
     if ([self.delegate respondsToSelector:@selector(lineGraph:pannedToClosestIndex:)]) {
-        [self.delegate lineGraph:self pannedToClosestIndex:(closestDot != nil ? closestDot.tag - DotFirstTag100 : -1)];
+        [self.delegate lineGraph:self pannedToClosestIndex:(closestDot != nil ? closestDot.tag - DotFirstTag100 : NSNotFound)];
     }
 }
 

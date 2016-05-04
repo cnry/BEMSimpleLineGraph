@@ -132,6 +132,16 @@ IB_DESIGNABLE @interface BEMSimpleLineGraphView : UIView <UIGestureRecognizerDel
 - (nullable NSArray *)graphLabelsForXAxis;
 
 
+/** All the labels of the Y-Axis.
+ @return An array of UILabels, one for each displayed Y-Axis label. The array is sorted from the bottom side of the graph to the top side. */
+- (nullable NSArray *)graphLabelsForYAxis;
+
+
+/** All the reference line labels of the Y-Axis.
+ @return An array of UILabels, one for each displayed Y-Axis reference line label. The array is sorted in order of the provided reference line values. */
+- (nullable NSArray *)graphReferenceLabelsForYAxis;
+
+
 /// Pans the graph to the given X-value.
 - (void)panToXValue:(CGFloat)xValue finishPan:(BOOL)finishPan;
 
@@ -144,6 +154,10 @@ IB_DESIGNABLE @interface BEMSimpleLineGraphView : UIView <UIGestureRecognizerDel
 
 /// The graph's label font used on various axis. This property may be privately overwritten, do not expect full functionality from this property.
 @property (strong, nonatomic, nullable) UIFont *labelFont;
+
+
+/// The graph's label font used on reference lines. This value will default to the same value as label font if not set.
+@property (strong, nonatomic, nullable) UIFont *referenceLabelFont;
 
 
 /// Time of the animation when the graph appears in seconds. Default value is 1.5.
@@ -342,6 +356,10 @@ IB_DESIGNABLE @interface BEMSimpleLineGraphView : UIView <UIGestureRecognizerDel
 
 /// Color of the label's text displayed on the Y-Axis. Defaut value is blackColor.
 @property (strong, nonatomic) IBInspectable UIColor *colorYaxisLabel;
+
+
+/// Color of the label's text displayed on Y-axis reference lines. Default value is \p colorYaxisLabel
+@property (strong, nonatomic) IBInspectable UIColor *colorReferenceYaxisLabel;
 
 
 /// Color of the pop up label's background displayed when the user touches the graph.
@@ -669,7 +687,13 @@ IB_DESIGNABLE @interface BEMSimpleLineGraphView : UIView <UIGestureRecognizerDel
 - (CGFloat)incrementValueForYAxisOnLineGraph:(BEMSimpleLineGraphView *)graph;
 
 
-
+/** The string to display for the Y-axis reference line of a given value. Will be either positioned right if Y-axis labels are on the left side or vice versa.
+ @discussion This method is only called and the associated labels are only shown if a custom set of reference points are provided.
+ @param graph The graph object which is requesting the string for the reference line.
+ @param value The value of the reference line to display a string for.
+ @return The string to show by the reference line.
+ */
+- (NSString *)lineGraph:(BEMSimpleLineGraphView *)graph labelOnYAxisReferenceLineForValue:(CGFloat)value;
 
 //----- DEPRECATED -----//
 
